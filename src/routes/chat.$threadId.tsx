@@ -14,7 +14,7 @@ import { useLang } from "@/lib/i18n";
 import { detectImageRequest } from "@/lib/image-intent";
 import { streamImage } from "@/lib/stream-image";
 
-export const Route = createFileRoute("/_authenticated/chat/$threadId")({
+export const Route = createFileRoute("/chat/$threadId")({
   head: () => ({
     meta: [
       { title: "Conversation — Opera AI" },

@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/lib/i18n";
 
-export const Route = createFileRoute("/_authenticated/chat")({
+export const Route = createFileRoute("/chat")({
   head: () => ({
     meta: [
       { title: "Chat workspace — Opera AI" },
