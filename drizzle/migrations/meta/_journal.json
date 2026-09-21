@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789779691789,
+      "tag": "0000_opera_ai_profiles_roles_chat_images",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789779762860,
+      "tag": "0001_create_workspace_files",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789782098681,
+      "tag": "0002_opera_ai_core_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789782294246,
+      "tag": "0003_security_center_and_public_gallery",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789967036185,
+      "tag": "0004_add_phone_to_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789967053995,
+      "tag": "0005_generations_storage_policies",
+      "breakpoints": true
+    }
+  ]
+}
