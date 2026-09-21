@@ -1,13 +1,26 @@
 import { createFileRoute, Link, Outlet, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ImageIcon, MessageSquare, Menu, Plus, Trash2, X, LayoutDashboard } from "lucide-react";
+import {
+  Code2,
+  ImageIcon,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Plus,
+  ShieldCheck,
+  Trash2,
+  X,
+} from "lucide-react";
 import { OperaLogoMark } from "@/components/brand/OperaLogoMark";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/chat")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Chat workspace — Opera AI" },
@@ -21,6 +34,11 @@ export const Route = createFileRoute("/chat")({
   component: ChatLayout,
 });
 
+function initialsOf(name: string) {
+  const parts = name.trim().split(/\s+/).slice(0, 2);
+  return parts.map((part) => part[0]?.toUpperCase() ?? "").join("") || "?";
+}
+
 function ChatLayout() {
   const { t, lang } = useLang();
   const { user } = useAuth();
@@ -28,6 +46,20 @@ function ChatLayout() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const params = useParams({ strict: false }) as { threadId?: string };
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name, username, avatar_url")
+        .eq("id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: threads } = useQuery({
     queryKey: ["chat-threads", user?.id],
@@ -43,23 +75,19 @@ function ChatLayout() {
     },
   });
 
-  const newChat = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("chat_threads")
-      .insert({ user_id: user.id, title: "New chat" })
-      .select("id")
-      .single();
-    void queryClient.invalidateQueries({ queryKey: ["chat-threads"] });
-    setOpen(false);
-    if (data) navigate({ to: "/chat/$threadId", params: { threadId: data.id } });
-  };
-
   const removeThread = async (id: string) => {
     await supabase.from("chat_threads").delete().eq("id", id);
     void queryClient.invalidateQueries({ queryKey: ["chat-threads"] });
     if (params.threadId === id) navigate({ to: "/chat" });
   };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    queryClient.clear();
+    navigate({ to: "/chat" });
+  };
+
+  const name = profile?.display_name || profile?.username || "";
 
   return (
     <div dir={lang === "ar" ? "rtl" : "ltr"} className="flex h-screen overflow-hidden">
@@ -89,19 +117,65 @@ function ChatLayout() {
           </button>
         </div>
 
-        <div className="px-4">
-          <button type="button" onClick={newChat} className="btn-hero w-full justify-center !py-2.5 text-sm">
+        {/* Profile block */}
+        <div className="flex flex-col items-center gap-2 px-4 pb-4">
+          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-glass-border bg-primary/15 font-display text-lg font-bold text-primary">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              initialsOf(name)
+            )}
+          </div>
+          {user ? (
+            <>
+              <Link to="/dashboard" className="max-w-full truncate text-sm font-semibold">
+                {name || t("Your account", "حسابك")}
+              </Link>
+              <button type="button" onClick={signOut} className="btn-ghost !py-1.5 text-xs">
+                <LogOut className="h-3.5 w-3.5" />
+                {t("Log out", "تسجيل الخروج")}
+              </button>
+            </>
+          ) : (
+            <Link to="/auth" className="btn-ghost !py-1.5 text-xs">
+              <LogIn className="h-3.5 w-3.5" />
+              {t("Log in", "تسجيل الدخول")}
+            </Link>
+          )}
+        </div>
+
+        {/* Nav buttons under the profile */}
+        <div className="space-y-1 px-3">
+          <Link to="/chat" onClick={() => setOpen(false)} className="btn-hero w-full justify-center !py-2.5 text-sm">
             <Plus className="h-4 w-4" />
             {t("New chat", "محادثة جديدة")}
-          </button>
+          </Link>
+          <Link to="/studio" className="btn-ghost w-full justify-start !py-2.5 text-xs">
+            <ImageIcon className="h-4 w-4" />
+            {t("Creative Studio", "الاستوديو الإبداعي")}
+          </Link>
+          <Link to="/code" className="btn-ghost w-full justify-start !py-2.5 text-xs">
+            <Code2 className="h-4 w-4" />
+            {t("Code", "الأكواد")}
+          </Link>
+          <Link to="/dashboard" className="btn-ghost w-full justify-start !py-2.5 text-xs">
+            <LayoutDashboard className="h-4 w-4" />
+            {t("Account", "الحساب")}
+          </Link>
+          <Link to="/security" className="btn-ghost w-full justify-start !py-2.5 text-xs">
+            <ShieldCheck className="h-4 w-4" />
+            {t("Security", "الأمان")}
+          </Link>
         </div>
 
         <nav className="mt-4 flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-          {(threads ?? []).map((thread: any) => (
+          {(threads ?? []).map((thread: { id: string; title: string }) => (
             <div
               key={thread.id}
               className={`group flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm transition ${
-                params.threadId === thread.id ? "bg-primary/12 text-primary" : "text-muted-foreground hover:bg-glass-border/40"
+                params.threadId === thread.id
+                  ? "bg-primary/12 text-primary"
+                  : "text-muted-foreground hover:bg-glass-border/40"
               }`}
             >
               <MessageSquare className="h-4 w-4 shrink-0" />
@@ -123,23 +197,12 @@ function ChatLayout() {
               </button>
             </div>
           ))}
-          {threads?.length === 0 && (
+          {user && threads?.length === 0 && (
             <p className="px-3 py-6 text-center text-xs text-muted-foreground">
               {t("No conversations yet.", "لا توجد محادثات بعد.")}
             </p>
           )}
         </nav>
-
-        <div className="space-y-1 border-t border-glass-border p-3">
-          <Link to="/studio" className="btn-ghost w-full justify-center !py-2.5 text-xs">
-            <ImageIcon className="h-4 w-4" />
-            {t("Creative Studio", "الاستوديو الإبداعي")}
-          </Link>
-          <Link to="/dashboard" className="btn-ghost w-full justify-center !py-2.5 text-xs">
-            <LayoutDashboard className="h-4 w-4" />
-            {t("Account", "الحساب")}
-          </Link>
-        </div>
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col">
