@@ -29,6 +29,13 @@
       "when": 1789782294246,
       "tag": "0003_security_center_and_public_gallery",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789967036185,
+      "tag": "0004_add_phone_to_profiles",
+      "breakpoints": true
     }
   ]
 }
